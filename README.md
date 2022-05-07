@@ -17,7 +17,13 @@ This repo provides the PyTorch implementation of the work:
 
 ## Requirements
 * Ubuntu 16.04/18.04, CUDA 10.1/10.2, python >= 3.6, PyTorch >= 1.6, torchvision
-* Install `detectron2` from [source](https://github.com/facebookresearch/detectron2)
+* Install `detectron2` from [source](https://github.com/facebookresearch/detectron2).
+  note:make sure your gcc version is not higher than 10.0 \
+  if you want to change it
+  ```
+  sudo update-alternatives --config gcc
+   sudo update-alternatives --config g++
+  ```
 * `sh scripts/install_deps.sh`
 * Compile the cpp extension for `farthest points sampling (fps)`:
     ```
@@ -51,6 +57,9 @@ datasets/
 
 
 ## Training GDR-Net
+before training, use tools/lm/1_compute_fps.py to generate datasets/BOP_DATASETS/lm/models/fps_points.pkl
+
+
 `./core/gdrn_modeling/train_gdrn.sh <config_path> <gpu_ids> (other args)`
 
 Example:
