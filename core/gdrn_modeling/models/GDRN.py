@@ -118,8 +118,8 @@ class GDRN(nn.Module):
             # joints.shape [bs, 1152, 64, 64]
             mask, coor_x, coor_y, coor_z, region = self.rot_head_net(features, x_f64, x_f32, x_f16)
         else:
-            features = self.backbone(x)  # features.shape [bs, 2048, 8, 8]
-            # joints.shape [bs, 1152, 64, 64]
+            features = self.backbone(x)  # features.shape [bs, 512, 8, 8]
+            # shape [bs, 1, 64, 64]  [bs, 1, 64, 64] * 3   [bs, 65, 64, 64]
             mask, coor_x, coor_y, coor_z, region = self.rot_head_net(features)
 
         # TODO: remove this trans_head_net
@@ -576,7 +576,7 @@ def build_model_optimizer(cfg):
         r_out_dim, mask_out_dim, region_out_dim = get_xyz_mask_region_out_dim(cfg)
         rot_head_net = RotWithRegionHead(
             cfg,
-            channels[-1],
+            channels[-1],  # backbone 输入的特征图深度
             r_head_cfg.NUM_LAYERS,
             r_head_cfg.NUM_FILTERS,
             r_head_cfg.CONV_KERNEL_SIZE,

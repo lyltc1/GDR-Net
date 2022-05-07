@@ -1,3 +1,4 @@
+import resource
 import logging
 from loguru import logger as loguru_logger
 import os
@@ -17,7 +18,7 @@ cv2.setNumThreads(0)  # pytorch issue 1355: possible deadlock in dataloader
 cv2.ocl.setUseOpenCL(False)
 
 cur_dir = osp.dirname(osp.abspath(__file__))
-sys.path.insert(0, osp.join(cur_dir, "../../"))
+sys.path.insert(0, osp.join(cur_dir, "../../"))  # add project directory to sys.path
 from core.utils.default_args_setup import my_default_argument_parser, my_default_setup
 from core.utils.my_setup import setup_for_distributed
 from core.utils.my_checkpoint import MyCheckpointer
@@ -78,6 +79,7 @@ def setup(args):
         args.num_machines = 1
         cfg.DATALOADER.NUM_WORKERS = 0
         cfg.TRAIN.PRINT_FREQ = 1
+        cfg.SOLVER.IMS_PER_BATCH = 2
     # register datasets
     register_datasets_in_cfg(cfg)
 
@@ -143,11 +145,7 @@ def main(args):
 
 
 if __name__ == "__main__":
-    import resource
-
-    # RuntimeError: received 0 items of ancdata. Issue: pytorch/pytorch#973
-    rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
-    hard_limit = rlimit[1]
+    hard_limit = resource.getrlimit(resource.RLIMIT_NOFILE)[1]  # max files number can be opened
     soft_limit = min(500000, hard_limit)
     iprint("soft limit: ", soft_limit, "hard limit: ", hard_limit)
     resource.setrlimit(resource.RLIMIT_NOFILE, (soft_limit, hard_limit))

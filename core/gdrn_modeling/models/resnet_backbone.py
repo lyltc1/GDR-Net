@@ -50,7 +50,7 @@ class ResNetBackboneNet(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def forward(self, x):  # x.shape [32, 3, 256, 256]
+    def forward(self, x):  # x.shape [bsz, 3, 256, 256]
         if self.freeze:
             with torch.no_grad():
                 x = self.conv1(x)  # x.shape [32, 64, 128, 128]
@@ -66,14 +66,14 @@ class ResNetBackboneNet(nn.Module):
                 else:
                     return x_high_feature.detach()
         else:
-            x = self.conv1(x)  # x.shape [32, 64, 128, 128]
+            x = self.conv1(x)  # x.shape [bsz, 3, 256, 256] -> [x.shape [bsz, 64, 128, 128]
             x = self.bn1(x)
             x = self.relu(x)
-            x_low_feature = self.maxpool(x)  # x.shape [32, 64, 64, 64]
-            x_f64 = self.layer1(x_low_feature)  # x.shape [32, 256, 64, 64]
-            x_f32 = self.layer2(x_f64)  # x.shape [32, 512, 32, 32]
-            x_f16 = self.layer3(x_f32)  # x.shape [32, 1024, 16, 16]
-            x_high_feature = self.layer4(x_f16)  # x.shape [32, 2048, 8, 8]
+            x_low_feature = self.maxpool(x)  # x.shape [bsz, 64, 64, 64]
+            x_f64 = self.layer1(x_low_feature)  # x.shape [bsz, 64, 64, 64]
+            x_f32 = self.layer2(x_f64)  # x.shape [bsz, 128, 32, 32]
+            x_f16 = self.layer3(x_f32)  # x.shape [bsz, 256, 16, 16]
+            x_high_feature = self.layer4(x_f16)  # x.shape [bsz, 512, 8, 8]
             if self.rot_concat:
                 return x_high_feature, x_f64, x_f32, x_f16
             else:

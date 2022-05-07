@@ -5,6 +5,8 @@ from OpenGL.GL import *
 
 from .ebo import EBO
 
+import ctypes
+
 
 class VAO(object):
     def __init__(self, vbo_attrib, ebo=None):
@@ -21,16 +23,16 @@ class VAO(object):
                 attribtype = attrib[2]
                 normalized = attrib[3]
                 relativeoffset = attrib[4]
-                glVertexArrayAttribFormat(self.__id, attribindex, size, attribtype, normalized, relativeoffset)
-                glVertexArrayAttribBinding(self.__id, attribindex, i)
-                glEnableVertexArrayAttrib(self.__id, attribindex)
-            glVertexArrayVertexBuffer(self.__id, i, vbo.id, offset, stride)
+                glVertexArrayAttribFormat(self.__id[0], attribindex, size, attribtype, normalized, relativeoffset)
+                glVertexArrayAttribBinding(self.__id[0], attribindex, i)
+                glEnableVertexArrayAttrib(self.__id[0], attribindex)
+            glVertexArrayVertexBuffer(self.__id[0], i, vbo.id[0], offset, stride)
             i += 1
         if ebo != None:
             if isinstance(ebo, EBO):
-                glVertexArrayElementBuffer(self.__id, ebo.id)
+                glVertexArrayElementBuffer(self.__id[0], ebo.id[0])
             else:
                 ValueError("Invalid EBO type.")
 
     def bind(self):
-        glBindVertexArray(self.__id)
+        glBindVertexArray(self.__id[0])

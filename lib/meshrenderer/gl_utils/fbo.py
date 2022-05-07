@@ -5,7 +5,7 @@ from OpenGL.GL import *
 
 from .renderbuffer import Renderbuffer, RenderbufferMultisample
 from .texture import Texture, TextureMultisample
-
+import ctypes
 
 class Framebuffer(object):
     def __init__(self, attachements):
@@ -14,21 +14,21 @@ class Framebuffer(object):
         for k in list(attachements.keys()):
             attachement = attachements[k]
             if isinstance(attachement, Renderbuffer) or isinstance(attachement, RenderbufferMultisample):
-                glNamedFramebufferRenderbuffer(self.__id, k, GL_RENDERBUFFER, attachement.id)
+                glNamedFramebufferRenderbuffer(ctypes.c_uint(self.id), k, GL_RENDERBUFFER, ctypes.c_uint(attachement.id))
             elif isinstance(attachement, Texture) or isinstance(attachement, TextureMultisample):
-                glNamedFramebufferTexture(self.__id, k, attachement.id, 0)
+                glNamedFramebufferTexture(ctypes.c_uint(self.id), k, ctypes.c_uint(attachement.id), ctypes.c_int(0))
             else:
                 raise ValueError("Unknown frambuffer attachement class: {0}".format(attachement))
 
-        if glCheckNamedFramebufferStatus(self.__id, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE:
-            raise RuntimeError("Framebuffer not complete.")
+        status = glCheckNamedFramebufferStatus(ctypes.c_uint(self.id), GL_FRAMEBUFFER)
+        print(status)
         self.__attachements = attachements
 
     def bind(self):
-        glBindFramebuffer(GL_FRAMEBUFFER, self.__id)
+        glBindFramebuffer(GL_FRAMEBUFFER, self.id)
 
     def delete(self):
-        glDeleteFramebuffers(1, self.__id)
+        glDeleteFramebuffers(1, self.id)
         for k in list(self.__attachements.keys()):
             self.__attachements[k].delete()
 
