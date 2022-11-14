@@ -1,4 +1,4 @@
-# GDR-Net
+# GDR-Net change this file
 This repo provides the PyTorch implementation of the work:
 
 **Gu Wang, Fabian Manhardt, Federico Tombari, Xiangyang Ji. GDR-Net: Geometry-Guided Direct Regression Network for Monocular 6D Object Pose Estimation. In CVPR 2021.**
