@@ -1,6 +1,6 @@
 _base_ = ["../../_base_/gdrn_base.py"]
 
-OUTPUT_DIR = "output/gdrn/ycbv/a6_cPnP_AugAAETrunc_BG0.5_Rsym_ycbv_real_pbr_visib20_10e"
+OUTPUT_DIR = "output/symn/ycbv/symn_ycbv_all_paper"
 INPUT = dict(
     DZI_PAD_SCALE=1.5,
     TRUNCATE_FG=True,
@@ -12,7 +12,7 @@ INPUT = dict(
         # Sometimes(0.5, PerspectiveTransform(0.05)),
         # Sometimes(0.5, CropAndPad(percent=(-0.05, 0.1))),
         # Sometimes(0.5, Affine(scale=(1.0, 1.2))),
-        "Sometimes(0.5, CoarseDropout( p=0.2, size_percent=0.05) ),"
+        "Sometimes(0.5, CoarseDropout(p=0.2, size_percent=0.05) ),"
         "Sometimes(0.5, GaussianBlur(1.2*np.random.rand())),"
         "Sometimes(0.5, Add((-25, 25), per_channel=0.3)),"
         "Sometimes(0.3, Invert(0.2, per_channel=True)),"
@@ -39,9 +39,8 @@ SOLVER = dict(
 )
 
 DATASETS = dict(
-    # TRAIN=("ycbv_train_real", "ycbv_train_pbr"),
-    TRAIN=("ycbv_train_pbr",),
-    # TEST=("ycbv_test",),
+    TRAIN=("ycbv_train_real", "ycbv_train_pbr"),
+    TEST=("ycbv_test",),
     # # AP    AP50  AR    inf.time  (faster RCNN)
     # # 75.10 93.00 81.40 25.4ms
     # DET_FILES_TEST=(
@@ -50,7 +49,7 @@ DATASETS = dict(
     # AP     AP50   AR   inf.time  (fcos_V57)
     # 79.581 96.949 84.2 56.572ms
     DET_FILES_TEST=(
-        "datasets/BOP_DATASETS/ycbv/test/test_bboxes/fcos_V57eSE_MSx1333_ColorAugAAEWeaker_8e_ycbv_real_pbr_8e_test_keyframe.json",
+        "/home/lyltc/git/GDR-Net/datasets/detect/ycbv/fcos_V57eSE_MSx1333_ColorAugAAEWeaker_8e_ycbv_real_pbr_8e_test_keyframe.json",
     ),
     SYM_OBJS=["024_bowl", "036_wood_block", "051_large_clamp", "052_extra_large_clamp", "061_foam_brick"],  # ycbv
 )

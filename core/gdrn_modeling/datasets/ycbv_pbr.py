@@ -63,7 +63,7 @@ class YCBV_PBR_Dataset:
         self.obj2label = OrderedDict((obj, obj_id) for obj_id, obj in enumerate(self.objs))
         ##########################################################
 
-        self.scenes = [f"{i:06d}" for i in range(50)]
+        self.scenes = [f"{i:06d}" for i in range(1)]
 
     def __call__(self):
         """Load light-weight instance annotations of all images into a list of
@@ -164,7 +164,7 @@ class YCBV_PBR_Dataset:
                     mask_rle = binary_mask_to_rle(mask_single, compressed=True)
 
                     xyz_path = osp.join(self.xyz_root, f"{scene_id:06d}/{int_im_id:06d}_{anno_i:06d}-xyz.pkl")
-                    assert osp.exists(xyz_path), xyz_path
+                    # assert osp.exists(xyz_path), xyz_path
                     inst = {
                         "category_id": cur_label,  # 0-based label
                         "bbox": bbox_visib,  # TODO: load both bbox_obj and bbox_visib
@@ -331,7 +331,7 @@ def register_with_name_cfg(name, data_cfg=None):
             otherwise requires data_cfg
             data_cfg can be set in cfg.DATA_CFG.name
     """
-    dprint("register dataset: {}".format(name))
+    dprint("register dataset: {}".format(name))  # name 是数据集的名字，ycbv_pbr有1+21个数据集
     if name in SPLITS_YCBV_PBR:
         used_cfg = SPLITS_YCBV_PBR[name]
     else:

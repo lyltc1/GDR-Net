@@ -43,27 +43,27 @@ if __name__ == "__main__":
     data = next(data_loader_iter)
     roi_img = np.uint8(data[0]['roi_img'].detach().cpu().numpy().transpose((1, 2, 0)) * 255.)
     roi_img = cv2.cvtColor(roi_img, cv2.COLOR_BGR2RGB)
-    roi_xyz = data[0]['roi_xyz'].detach().cpu().numpy().transpose((1, 2, 0))
-    roi_xyz = np.uint8(get_emb_show(roi_xyz) * 255.)
+    # roi_xyz = data[0]['roi_xyz'].detach().cpu().numpy().transpose((1, 2, 0))
+    # roi_xyz = np.uint8(get_emb_show(roi_xyz) * 255.)
     roi_mask_trunc = np.uint8(data[0]['roi_mask_trunc'].detach().cpu().numpy() * 255.)
     roi_mask_visib = np.uint8(data[0]['roi_mask_visib'].detach().cpu().numpy() * 255.)
-    roi_mask_obj = np.uint8(data[0]['roi_mask_obj'].detach().cpu().numpy() * 255.)
-    roi_region = np.uint8(data[0]['roi_region'].detach().cpu().numpy() * 3)
+    # roi_mask_obj = np.uint8(data[0]['roi_mask_obj'].detach().cpu().numpy() * 255.)
+    # roi_region = np.uint8(data[0]['roi_region'].detach().cpu().numpy() * 3)
     show_ims = [
         roi_img,
-        roi_xyz,
+        # roi_xyz,
         roi_mask_trunc,
         roi_mask_visib,
-        roi_mask_obj,
-        roi_region,
+        # roi_mask_obj,
+        # roi_region,
     ]
     show_titles = [
         "roi_img",
-        "roi_xyz",
+        # "roi_xyz",
         "roi_mask_trunc",
         "roi_mask_visib",
-        "roi_mask_obj",
-        "roi_region"
+        # "roi_mask_obj",
+        # "roi_region"
     ]
     grid_show(show_ims, show_titles, row=2, col=3)
     batch = batch_data(cfg, data)

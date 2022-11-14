@@ -1,8 +1,9 @@
+import torch
 from mmcv import Config
 from core.utils.default_args_setup import my_default_argument_parser
 from lib.utils.utils import iprint
 from core.gdrn_modeling.models import GDRN  # noqa
-
+from torchsummary import summary
 
 if __name__ == "__main__":
     parser = my_default_argument_parser()
@@ -14,4 +15,6 @@ if __name__ == "__main__":
 
     iprint(f"Used GDRN module name: {cfg.MODEL.CDPN.NAME}")
     model, optimizer = eval(cfg.MODEL.CDPN.NAME).build_model_optimizer(cfg)
-    iprint("Model:\n{}".format(model))
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    summary(model.to(device), (3, 256, 256))
+    # iprint("Model:\n{}".format(model))

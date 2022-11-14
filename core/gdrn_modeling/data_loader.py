@@ -460,24 +460,24 @@ class GDRN_DatasetFromList(Base_DatasetFromList):
         roi_extent = self._get_extents(dataset_name)[roi_cls]
         dataset_dict["roi_extent"] = torch.as_tensor(np.array(roi_extent), dtype=torch.float32)
 
-        # load xyz =======================================================
-        xyz_info = mmcv.load(inst_infos["xyz_path"])
-        x1, y1, x2, y2 = xyz_info["xyxy"]
-        # float16 does not affect performance (classification/regresion)
-        xyz_crop = xyz_info["xyz_crop"]
-        xyz = np.zeros((im_H, im_W, 3), dtype=np.float32)
-        xyz[y1 : y2 + 1, x1 : x2 + 1, :] = xyz_crop
-        # NOTE: full mask
-        mask_obj = ((xyz[:, :, 0] != 0) | (xyz[:, :, 1] != 0) | (xyz[:, :, 2] != 0)).astype(np.bool).astype(np.float32)
-        if cfg.INPUT.SMOOTH_XYZ:
-            xyz = self.smooth_xyz(xyz)
+        # # load xyz =======================================================
+        # xyz_info = mmcv.load(inst_infos["xyz_path"])
+        # x1, y1, x2, y2 = xyz_info["xyxy"]
+        # # float16 does not affect performance (classification/regresion)
+        # xyz_crop = xyz_info["xyz_crop"]
+        # xyz = np.zeros((im_H, im_W, 3), dtype=np.float32)
+        # xyz[y1 : y2 + 1, x1 : x2 + 1, :] = xyz_crop
+        # # NOTE: full mask
+        # mask_obj = ((xyz[:, :, 0] != 0) | (xyz[:, :, 1] != 0) | (xyz[:, :, 2] != 0)).astype(np.bool).astype(np.float32)
+        # if cfg.INPUT.SMOOTH_XYZ:
+        #     xyz = self.smooth_xyz(xyz)
+        #
+        # if cfg.TRAIN.VIS:
+        #     xyz = self.smooth_xyz(xyz)
 
-        if cfg.TRAIN.VIS:
-            xyz = self.smooth_xyz(xyz)
-
-        # override bbox info using xyz_infos
-        inst_infos["bbox"] = [x1, y1, x2, y2]
-        inst_infos["bbox_mode"] = BoxMode.XYXY_ABS
+        # # override bbox info using xyz_infos
+        # inst_infos["bbox"] = [x1, y1, x2, y2]
+        # inst_infos["bbox_mode"] = BoxMode.XYXY_ABS
 
         # USER: Implement additional transformations if you have other types of data
         # inst_infos.pop("segmentation")  # NOTE: use mask from xyz
@@ -504,7 +504,7 @@ class GDRN_DatasetFromList(Base_DatasetFromList):
 
         ## roi_mask ---------------------------------------
         # (mask_trunc < mask_visib < mask_obj)
-        mask_visib = anno["segmentation"].astype("float32") * mask_obj
+        mask_visib = anno["segmentation"].astype("float32")
         if mask_trunc is None:
             mask_trunc = mask_visib
         else:
@@ -525,57 +525,16 @@ class GDRN_DatasetFromList(Base_DatasetFromList):
             mask_visib[:, :, None], bbox_center, scale, out_res, interpolation=mask_xyz_interp
         )
 
-        roi_mask_obj = crop_resize_by_warp_affine(
-            mask_obj[:, :, None], bbox_center, scale, out_res, interpolation=mask_xyz_interp
-        )
-
-        ## roi_xyz ----------------------------------------------------
-        roi_xyz = crop_resize_by_warp_affine(xyz, bbox_center, scale, out_res, interpolation=mask_xyz_interp)
-
         # region label
         if r_head_cfg.NUM_REGIONS > 1:
             fps_points = self._get_fps_points(dataset_name)[roi_cls]
-            roi_region = xyz_to_region(roi_xyz, fps_points)  # HW
-            dataset_dict["roi_region"] = torch.as_tensor(roi_region.astype(np.int32)).contiguous()
 
-        roi_xyz = roi_xyz.transpose(2, 0, 1)  # HWC-->CHW
-        # normalize xyz to [0, 1] using extent
-        roi_xyz[0] = roi_xyz[0] / roi_extent[0] + 0.5
-        roi_xyz[1] = roi_xyz[1] / roi_extent[1] + 0.5
-        roi_xyz[2] = roi_xyz[2] / roi_extent[2] + 0.5
 
-        if ("CE" in r_head_cfg.XYZ_LOSS_TYPE) or ("cls" in cfg.MODEL.CDPN.NAME):  # convert target to int for cls
-            # assume roi_xyz has been normalized in [0, 1]
-            roi_xyz_bin = np.zeros_like(roi_xyz)
-            roi_x_norm = roi_xyz[0]
-            roi_x_norm[roi_x_norm < 0] = 0  # clip
-            roi_x_norm[roi_x_norm > 0.999999] = 0.999999
-            # [0, BIN-1]
-            roi_xyz_bin[0] = np.asarray(roi_x_norm * r_head_cfg.XYZ_BIN, dtype=np.uint8)
 
-            roi_y_norm = roi_xyz[1]
-            roi_y_norm[roi_y_norm < 0] = 0
-            roi_y_norm[roi_y_norm > 0.999999] = 0.999999
-            roi_xyz_bin[1] = np.asarray(roi_y_norm * r_head_cfg.XYZ_BIN, dtype=np.uint8)
-
-            roi_z_norm = roi_xyz[2]
-            roi_z_norm[roi_z_norm < 0] = 0
-            roi_z_norm[roi_z_norm > 0.999999] = 0.999999
-            roi_xyz_bin[2] = np.asarray(roi_z_norm * r_head_cfg.XYZ_BIN, dtype=np.uint8)
 
             # the last bin is for bg
-            roi_masks = {"trunc": roi_mask_trunc, "visib": roi_mask_visib, "obj": roi_mask_obj}
-            roi_mask_xyz = roi_masks[r_head_cfg.XYZ_LOSS_MASK_GT]
-            roi_xyz_bin[0][roi_mask_xyz == 0] = r_head_cfg.XYZ_BIN
-            roi_xyz_bin[1][roi_mask_xyz == 0] = r_head_cfg.XYZ_BIN
-            roi_xyz_bin[2][roi_mask_xyz == 0] = r_head_cfg.XYZ_BIN
+            roi_masks = {"trunc": roi_mask_trunc, "visib": roi_mask_visib}
 
-            if "CE" in r_head_cfg.XYZ_LOSS_TYPE:
-                dataset_dict["roi_xyz_bin"] = torch.as_tensor(roi_xyz_bin.astype("uint8")).contiguous()
-            if "/" in r_head_cfg.XYZ_LOSS_TYPE and len(r_head_cfg.XYZ_LOSS_TYPE.split("/")[1]) > 0:
-                dataset_dict["roi_xyz"] = torch.as_tensor(roi_xyz.astype("float32")).contiguous()
-        else:
-            dataset_dict["roi_xyz"] = torch.as_tensor(roi_xyz.astype("float32")).contiguous()
 
         # pose targets ----------------------------------------------------------------------
         pose = inst_infos["pose"]
@@ -620,7 +579,6 @@ class GDRN_DatasetFromList(Base_DatasetFromList):
 
         dataset_dict["roi_mask_trunc"] = torch.as_tensor(roi_mask_trunc.astype("float32")).contiguous()
         dataset_dict["roi_mask_visib"] = torch.as_tensor(roi_mask_visib.astype("float32")).contiguous()
-        dataset_dict["roi_mask_obj"] = torch.as_tensor(roi_mask_obj.astype("float32")).contiguous()
 
         dataset_dict["bbox_center"] = torch.as_tensor(bbox_center, dtype=torch.float32)
         dataset_dict["scale"] = scale

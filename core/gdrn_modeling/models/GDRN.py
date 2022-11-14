@@ -122,9 +122,6 @@ class GDRN(nn.Module):
             # shape [bs, 1, 64, 64]  [bs, 1, 64, 64] * 3   [bs, 65, 64, 64]
             mask, coor_x, coor_y, coor_z, region = self.rot_head_net(features)
 
-        # TODO: remove this trans_head_net
-        # trans = self.trans_head_net(features)
-
         device = x.device
         bs = x.shape[0]
         num_classes = r_head_cfg.NUM_CLASSES
@@ -544,7 +541,7 @@ def get_xyz_mask_region_out_dim(cfg):
     # at least 2 regions (with bg, at least 3 regions)
     assert region_out_dim > 2, region_out_dim
 
-    return r_out_dim, mask_out_dim, region_out_dim
+    return r_out_dim, mask_out_dim, region_out_dim  # 3, 1, 65
 
 
 def build_model_optimizer(cfg):
@@ -577,20 +574,20 @@ def build_model_optimizer(cfg):
         rot_head_net = RotWithRegionHead(
             cfg,
             channels[-1],  # backbone 输入的特征图深度
-            r_head_cfg.NUM_LAYERS,
-            r_head_cfg.NUM_FILTERS,
-            r_head_cfg.CONV_KERNEL_SIZE,
-            r_head_cfg.OUT_CONV_KERNEL_SIZE,
-            rot_output_dim=r_out_dim,
-            mask_output_dim=mask_out_dim,
-            freeze=r_head_cfg.FREEZE,
-            num_classes=r_head_cfg.NUM_CLASSES,
-            rot_class_aware=r_head_cfg.ROT_CLASS_AWARE,
-            mask_class_aware=r_head_cfg.MASK_CLASS_AWARE,
-            num_regions=r_head_cfg.NUM_REGIONS,
-            region_class_aware=r_head_cfg.REGION_CLASS_AWARE,
-            norm=r_head_cfg.NORM,
-            num_gn_groups=r_head_cfg.NUM_GN_GROUPS,
+            r_head_cfg.NUM_LAYERS,  # 3
+            r_head_cfg.NUM_FILTERS,  # 256
+            r_head_cfg.CONV_KERNEL_SIZE,  # 3
+            r_head_cfg.OUT_CONV_KERNEL_SIZE,  # 1
+            rot_output_dim=r_out_dim,  # 3
+            mask_output_dim=mask_out_dim,  # 1
+            freeze=r_head_cfg.FREEZE,  # False
+            num_classes=r_head_cfg.NUM_CLASSES,  # 21
+            rot_class_aware=r_head_cfg.ROT_CLASS_AWARE,  # False
+            mask_class_aware=r_head_cfg.MASK_CLASS_AWARE,  # False
+            num_regions=r_head_cfg.NUM_REGIONS,  # 64
+            region_class_aware=r_head_cfg.REGION_CLASS_AWARE,  # False
+            norm=r_head_cfg.NORM,  # "BN"
+            num_gn_groups=r_head_cfg.NUM_GN_GROUPS,  # 32
         )
         if r_head_cfg.FREEZE:
             for param in rot_head_net.parameters():

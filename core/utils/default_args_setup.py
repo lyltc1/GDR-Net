@@ -110,7 +110,7 @@ def my_default_setup(cfg, args):
         logger.info("Full config saved to {}".format(path))
 
     assert (
-        args.num_gpus <= torch.cuda.device_count() and args.num_gpus >= 1
+            torch.cuda.device_count() >= args.num_gpus >= 1
     ), f"args.num_gpus: {args.num_gpus}, available num gpus: {torch.cuda.device_count()}"
 
     # make sure each worker has a different, yet deterministic seed if specified

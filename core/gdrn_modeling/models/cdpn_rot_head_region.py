@@ -92,12 +92,6 @@ class RotWithRegionHead(nn.Module):
             self.features.append(get_norm(norm, num_filters, num_gn_groups=num_gn_groups))
             self.features.append(nn.ReLU(inplace=True))
             for i in range(num_layers):
-                # _in_channels = in_channels if i == 0 else num_filters
-                # self.features.append(
-                #    nn.ConvTranspose2d(_in_channels, num_filters, kernel_size=kernel_size, stride=2, padding=padding,
-                #                       output_padding=output_padding, bias=False))
-                # self.features.append(nn.BatchNorm2d(num_filters))
-                # self.features.append(nn.ReLU(inplace=True))
                 if i >= 1:
                     self.features.append(nn.UpsamplingBilinear2d(scale_factor=2))
                 self.features.append(

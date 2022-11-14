@@ -83,11 +83,11 @@ class ConvPnPNet(nn.Module):
             self.features.append(get_norm(norm, featdim, num_gn_groups=num_gn_groups))
             self.features.append(nn.ReLU(inplace=True))
 
-        # self.fc1 = nn.Linear(featdim * 8 * 8 + 128, 1024)  # NOTE: 128 for extents feature
+
         self.fc1 = nn.Linear(featdim * 8 * 8, 1024)
         self.fc2 = nn.Linear(1024, 256)
         self.fc_r = nn.Linear(256, rot_dim)  # quat or rot6d
-        # TODO: predict centroid and z separately
+
         self.fc_t = nn.Linear(256, 3)
         self.act = nn.LeakyReLU(0.1, inplace=True)
 

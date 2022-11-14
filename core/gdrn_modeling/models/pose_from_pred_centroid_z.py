@@ -221,6 +221,7 @@ def pose_from_predictions_train(
         rot_ego = quat2mat_torch(quat_ego)
     if pred_rots.ndim == 3 and pred_rots.shape[-1] == 3:  # Nx3x3
         if is_allo:
+            # translation is the xyz coordinate in cam ordinate, pred_rots is 3*3 allo
             rot_ego = allo_to_ego_mat_torch(translation, pred_rots, eps=eps)
         else:
             rot_ego = pred_rots

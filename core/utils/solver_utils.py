@@ -132,7 +132,7 @@ def build_lr_scheduler(
             steps=cfg.SOLVER.get("REL_STEPS", [2 / 3.0, 8 / 9.0]),  # default [2/3., 8/9.], relative decay steps
             target_lr_factor=cfg.SOLVER.get("TARTGET_LR_FACTOR", 0),
             poly_power=cfg.SOLVER.get("POLY_POWER", 1.0),
-            step_gamma=cfg.SOLVER.GAMMA,  # default 0.1
+            step_gamma=cfg.SOLVER.get("GAMMA", 0.1),  # default 0.1
         )
     else:
         raise ValueError("Unknown LR scheduler: {}".format(name))

@@ -6,33 +6,23 @@ import os.path as osp
 import sys
 from setproctitle import setproctitle
 import torch
-
 from mmcv import Config
 import cv2
 from pytorch_lightning import seed_everything
+from core.utils.default_args_setup import my_default_argument_parser, my_default_setup
+from core.utils.my_setup import setup_for_distributed
+from core.utils.my_checkpoint import MyCheckpointer
+from lib.utils.utils import iprint
+from lib.utils.time_utils import get_time_str
+from core.symn.engine.engine import SYMN_Lite
+from core.symn.models import SymNet
 
-cv2.setNumThreads(0)  # pytorch issue 1355: possible deadlock in dataloader
-# OpenCL may be enabled by default in OpenCV3; disable it because it's not
-# thread safe and causes unwanted GPU memory allocations.
+logger = logging.getLogger("detectron2")
+cv2.setNumThreads(0)
 cv2.ocl.setUseOpenCL(False)
 
 cur_dir = osp.dirname(osp.abspath(__file__))
 sys.path.insert(0, osp.join(cur_dir, "../../"))  # add project directory to sys.path
-from core.utils.default_args_setup import my_default_argument_parser, my_default_setup
-from core.utils.my_setup import setup_for_distributed
-from core.utils.my_checkpoint import MyCheckpointer
-from core.utils import my_comm as comm
-
-from lib.utils.utils import iprint
-from lib.utils.time_utils import get_time_str
-
-from core.gdrn_modeling.dataset_factory import register_datasets_in_cfg
-from core.gdrn_modeling.engine import GDRN_Lite
-from core.gdrn_modeling.models import GDRN  # noqa
-
-
-logger = logging.getLogger("detectron2")
-
 
 def setup(args):
     """Create configs and perform basic setups."""
@@ -77,11 +67,9 @@ def setup(args):
         args.num_gpus = 1
         args.num_machines = 1
         cfg.DATALOADER.NUM_WORKERS = 0
-        cfg.TRAIN.PRINT_FREQ = 1
-        cfg.SOLVER.IMS_PER_BATCH = 2
-    # register datasets
-    register_datasets_in_cfg(cfg)
-
+        cfg.TRAIN.PRINT_FREQ = 2
+        cfg.TRAIN.BATCH_SIZE = 2
+        cfg.TRAIN.TOTAL_BATCH_SIZE = cfg.TRAIN.BATCH_SIZE
     exp_id = "{}".format(osp.splitext(osp.basename(args.config_file))[0])
 
     if args.eval_only:
@@ -96,25 +84,25 @@ def setup(args):
     return cfg
 
 
-class Lite(GDRN_Lite):
+class Lite(SYMN_Lite):
     def set_my_env(self, args, cfg):
+        # ---- set log and log env ----
         my_default_setup(cfg, args)  # will set os.environ["PYTHONHASHSEED"]
+        # ---- random seed init ----
         seed_everything(int(os.environ["PYTHONHASHSEED"]), workers=True)
         setup_for_distributed(is_master=self.is_global_zero)
 
     def run(self, args, cfg):
+        # ---- set log and random seed init -----
         self.set_my_env(args, cfg)
-
-        logger.info(f"Used GDRN module name: {cfg.MODEL.CDPN.NAME}")
-        model, optimizer = eval(cfg.MODEL.CDPN.NAME).build_model_optimizer(cfg)
+        # ---- build model and optimizer ----
+        logger.info(f"Used module name: {cfg.MODEL.NAME}")
+        model, optimizer = eval(cfg.MODEL.NAME).build_model_optimizer(cfg)
         logger.info("Model:\n{}".format(model))
-
-        # don't forget to call `setup` to prepare for model / optimizer for distributed training.
-        # the model is moved automatically to the right device.
+        # ---- distributed setup for model and opti by lite ----
         model, optimizer = self.setup(model, optimizer)
-
+        # ---- print the model info ----
         if True:
-            # sum(p.numel() for p in model.parameters() if p.requires_grad)
             params = sum(p.numel() for p in model.parameters()) / 1e6
             logger.info("{}M params".format(params))
 
@@ -122,7 +110,7 @@ class Lite(GDRN_Lite):
             MyCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(cfg.MODEL.WEIGHTS, resume=args.resume)
             return self.do_test(cfg, model)
 
-        self.do_train(cfg, args, model, optimizer, resume=args.resume)
+        self.do_train(cfg, model, optimizer, resume=args.resume)
         torch.multiprocessing.set_sharing_strategy("file_system")
         return self.do_test(cfg, model)
 
